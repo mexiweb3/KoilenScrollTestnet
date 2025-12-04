@@ -2,9 +2,6 @@
 cache/
 out/
 
-# Ignores development broadcast logs
-/broadcast/
-
 # node_modules
 node_modules/
 
