@@ -31,12 +31,12 @@ EVVM (EVM Virtualization) is an infraless blockchain virtualization solution tha
 
 | Contract | Address | Purpose |
 |----------|---------|---------|
-| **EVVM Core** | [`0xD192A9753fAd5f5D899bD475Fd2e4054c2dECAEe`](https://sepolia.scrollscan.com/address/0xd192a9753fad5f5d899bd475fd2e4054c2decaee) | Main EVVM contract handling token minting, transfers, and core logic |
-| **Staking** | [`0xc3c21D70C34fBc14Ad43bFc833c482B8EF58BdE2`](https://sepolia.scrollscan.com/address/0xc3c21d70c34fbc14ad43bfc833c482b8ef58bde2) | Manages staking operations and era rewards |
-| **Estimator** | [`0x02EdFe2907a36B038826012dF22082B94c31c578`](https://sepolia.scrollscan.com/address/0x02edfe2907a36b038826012df22082b94c31c578) | Estimates gas costs and operation fees |
-| **NameService** | [`0x76e6721B9d0E648B579F20800F9E3c03801DC38D`](https://sepolia.scrollscan.com/address/0x76e6721b9d0e648b579f20800f9e3c03801dc38d) | Handles domain name registration and management |
-| **Treasury** | [`0x175f0D77703B07E8fE0457C50817E3007cE4e58b`](https://sepolia.scrollscan.com/address/0x175f0d77703b07e8fe0457c50817e3007ce4e58b) | Manages ecosystem funds and distributions |
-| **P2PSwap** | [`0x5C2Aa72520f64a4BcEE32F8E8a79d5e664598C9A`](https://sepolia.scrollscan.com/address/0x5c2aa72520f64a4bcee32f8e8a79d5e664598c9a) | Enables peer-to-peer token swaps |
+| **EVVM Core** | [`0x97f35683957475Fd1548463923EC2111E19a9fCb`](https://sepolia.scrollscan.com/address/0x97f35683957475Fd1548463923EC2111E19a9fCb) | Main EVVM contract handling token minting, transfers, and core logic |
+| **Staking** | [`0x8291228ac301E8FCFc4773062453c7731E84BeDf`](https://sepolia.scrollscan.com/address/0x8291228ac301E8FCFc4773062453c7731E84BeDf) | Manages staking operations and era rewards |
+| **Estimator** | [`0x08cb050641b028a4467438e76546270Fe195F4cB`](https://sepolia.scrollscan.com/address/0x08cb050641b028a4467438e76546270Fe195F4cB) | Estimates gas costs and operation fees |
+| **NameService** | [`0xC63F7bF078f84Fc2af163dEADDFbb0223DC9F416`](https://sepolia.scrollscan.com/address/0xC63F7bF078f84Fc2af163dEADDFbb0223DC9F416) | Handles domain name registration and management |
+| **Treasury** | [`0x8fbc0B5bfa930d7B24CE99cF23F122958e3b43FD`](https://sepolia.scrollscan.com/address/0x8fbc0B5bfa930d7B24CE99cF23F122958e3b43FD) | Manages ecosystem funds and distributions |
+| **P2PSwap** | [`0xd74B1BF6579ec20a55c62b5a3a91886F8eB52856`](https://sepolia.scrollscan.com/address/0xd74B1BF6579ec20a55c62b5a3a91886F8eB52856) | Enables peer-to-peer token swaps |
 
 ### Contract Verification
 

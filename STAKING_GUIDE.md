@@ -6,7 +6,7 @@ Complete guide to staking on your EVVM instance and earning KOIL rewards.
 
 ## 📋 Overview
 
-**Staking Contract:** [`0xc3c21D70C34fBc14Ad43bFc833c482B8EF58BdE2`](https://sepolia.scrollscan.com/address/0xc3c21d70c34fbc14ad43bfc833c482b8ef58bde2)
+**Staking Contract:** [`0x8291228ac301E8FCFc4773062453c7731E84BeDf`](https://sepolia.scrollscan.com/address/0x8291228ac301E8FCFc4773062453c7731E84BeDf)
 
 **Current Staking Price:** 5,083 KOIL per stake
 **Your Role:** Golden Fisher (unrestricted staking privileges)
@@ -52,7 +52,7 @@ As the Golden Fisher, you have special staking rights with no restrictions.
 
 ```bash
 # Check your admin role
-cast call 0xc3c21D70C34fBc14Ad43bFc833c482B8EF58BdE2 \
+cast call 0x8291228ac301E8FCFc4773062453c7731E84BeDf \
   "getGoldenFisher()(address)" \
   --rpc-url https://sepolia-rpc.scroll.io/
 
@@ -65,13 +65,13 @@ cast call 0xc3c21D70C34fBc14Ad43bFc833c482B8EF58BdE2 \
 export PATH="$PATH:$HOME/.foundry/bin"
 
 # Check your current stake
-cast call 0xc3c21D70C34fBc14Ad43bFc833c482B8EF58BdE2 \
+cast call 0x8291228ac301E8FCFc4773062453c7731E84BeDf \
   "getUserAmountStaked(address)(uint256)" \
   0xa1fa6f037cac8ffc0be322ad2abf2c4a33989bbf \
   --rpc-url https://sepolia-rpc.scroll.io/
 
 # Check your KOIL balance
-cast call 0xD192A9753fAd5f5D899bD475Fd2e4054c2dECAEe \
+cast call 0x97f35683957475Fd1548463923EC2111E19a9fCb \
   "getBalance(address,address)(uint256)" \
   0xa1fa6f037cac8ffc0be322ad2abf2c4a33989bbf \
   0x0000000000000000000000000000000000000001 \
@@ -104,7 +104,7 @@ function goldenStaking(
 
 ```bash
 # Check if you're the admin
-cast call 0xD192A9753fAd5f5D899bD475Fd2e4054c2dECAEe \
+cast call 0x97f35683957475Fd1548463923EC2111E19a9fCb \
   "getCurrentAdmin()(address)" \
   --rpc-url https://sepolia-rpc.scroll.io/
 
@@ -125,7 +125,7 @@ Check if admin can add balance:
 # The EVVM contract has addAmountToUser function
 # As admin, you can call this
 
-cast send 0xD192A9753fAd5f5D899bD475Fd2e4054c2dECAEe \
+cast send 0x97f35683957475Fd1548463923EC2111E19a9fCb \
   "addAmountToUser(address,address,uint256)" \
   0xa1fa6f037cac8ffc0be322ad2abf2c4a33989bbf \
   0x0000000000000000000000000000000000000001 \
@@ -159,7 +159,7 @@ Someone can send you KOIL using the `pay()` function.
 ```bash
 export PATH="$PATH:$HOME/.foundry/bin"
 RPC="https://sepolia-rpc.scroll.io/"
-STAKING="0xc3c21D70C34fBc14Ad43bFc833c482B8EF58BdE2"
+STAKING="0x8291228ac301E8FCFc4773062453c7731E84BeDf"
 YOUR_ADDRESS="0xa1fa6f037cac8ffc0be322ad2abf2c4a33989bbf"
 
 # Get staking price
@@ -218,7 +218,7 @@ contract StakeAsGolden is Script {
 
         vm.startBroadcast(deployerPrivateKey);
 
-        IStaking staking = IStaking(0xc3c21D70C34fBc14Ad43bFc833c482B8EF58BdE2);
+        IStaking staking = IStaking(0x8291228ac301E8FCFc4773062453c7731E84BeDf);
 
         // Stake 5,083 KOIL (minimum stake amount)
         uint256 stakeAmount = 5083000000000000000000;
@@ -262,7 +262,7 @@ Check the `gimmeYiel` function:
 
 ```bash
 # This function is called to claim your staking yield
-cast send 0xc3c21D70C34fBc14Ad43bFc833c482B8EF58BdE2 \
+cast send 0x8291228ac301E8FCFc4773062453c7731E84BeDf \
   "gimmeYiel(address)(bytes32,address,uint256,uint256,uint256)" \
   0xa1fa6f037cac8ffc0be322ad2abf2c4a33989bbf \
   --rpc-url https://sepolia-rpc.scroll.io/ \
@@ -280,7 +280,7 @@ When you want to unstake your KOIL:
 
 ```bash
 # Check when you can unstake
-cast call 0xc3c21D70C34fBc14Ad43bFc833c482B8EF58BdE2 \
+cast call 0x8291228ac301E8FCFc4773062453c7731E84BeDf \
   "getTimeToUserUnlockFullUnstakingTime(address)(uint256)" \
   0xa1fa6f037cac8ffc0be322ad2abf2c4a33989bbf \
   --rpc-url https://sepolia-rpc.scroll.io/
@@ -318,8 +318,8 @@ interface IEvvm {
 }
 
 contract StakingTest is Test {
-    IStaking staking = IStaking(0xc3c21D70C34fBc14Ad43bFc833c482B8EF58BdE2);
-    IEvvm evvm = IEvvm(0xD192A9753fAd5f5D899bD475Fd2e4054c2dECAEe);
+    IStaking staking = IStaking(0x8291228ac301E8FCFc4773062453c7731E84BeDf);
+    IEvvm evvm = IEvvm(0x97f35683957475Fd1548463923EC2111E19a9fCb);
     address goldenFisher = 0xa1fa6f037cac8ffc0be322ad2abf2c4a33989bbf;
     address koilToken = 0x0000000000000000000000000000000000000001;
 
@@ -360,14 +360,14 @@ forge test --match-contract StakingTest -vv
 
 ### Contract Addresses
 
-- **EVVM**: `0xD192A9753fAd5f5D899bD475Fd2e4054c2dECAEe`
-- **Staking**: `0xc3c21D70C34fBc14Ad43bFc833c482B8EF58BdE2`
+- **EVVM**: `0x97f35683957475Fd1548463923EC2111E19a9fCb`
+- **Staking**: `0x8291228ac301E8FCFc4773062453c7731E84BeDf`
 - **KOIL Token**: `0x0000000000000000000000000000000000000001`
 
 ### Explorer Links
 
-- [EVVM on ScrollScan](https://sepolia.scrollscan.com/address/0xd192a9753fad5f5d899bd475fd2e4054c2decaee)
-- [Staking on ScrollScan](https://sepolia.scrollscan.com/address/0xc3c21d70c34fbc14ad43bfc833c482b8ef58bde2)
+- [EVVM on ScrollScan](https://sepolia.scrollscan.com/address/0x97f35683957475Fd1548463923EC2111E19a9fCb)
+- [Staking on ScrollScan](https://sepolia.scrollscan.com/address/0x8291228ac301E8FCFc4773062453c7731E84BeDf)
 
 ### Documentation
 

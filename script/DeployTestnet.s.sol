@@ -31,9 +31,9 @@ contract DeployTestnet is Script {
     }
 
     struct AdvancedMetadata {
+        uint256 totalSupply;
         uint256 eraTokens;
         uint256 reward;
-        uint256 totalSupply;
     }
 
     function setUp() public {}
@@ -59,12 +59,17 @@ contract DeployTestnet is Script {
         path = "input/evvmAdvancedMetadata.json";
         assert(vm.isFile(path));
         data = vm.readFile(path);
-        dataJson = vm.parseJson(data);
 
-        AdvancedMetadata memory advancedMetadata = abi.decode(
-            dataJson,
-            (AdvancedMetadata)
-        );
+        // Parse each field explicitly by key to avoid field ordering issues
+        uint256 totalSupply = vm.parseJsonUint(data, ".totalSupply");
+        uint256 eraTokens = vm.parseJsonUint(data, ".eraTokens");
+        uint256 reward = vm.parseJsonUint(data, ".reward");
+
+        AdvancedMetadata memory advancedMetadata = AdvancedMetadata({
+            totalSupply: totalSupply,
+            eraTokens: eraTokens,
+            reward: reward
+        });
 
         console2.log("Admin:", addressData.admin);
         console2.log("GoldenFisher:", addressData.goldenFisher);
