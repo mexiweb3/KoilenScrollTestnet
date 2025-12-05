@@ -7,10 +7,10 @@ export const BLOCKCHAIN_CONFIG = {
   rpcUrl: 'https://sepolia-rpc.scroll.io/',
   blockExplorer: 'https://sepolia.scrollscan.com',
 
-  // Contract Addresses (UPDATE AFTER DEPLOYMENT)
+  // Contract Addresses (Deployed on Scroll Sepolia)
   contracts: {
-    koilenRegistry: '0x...', // Update with deployed address
-    sensorDataRegistry: '0x...', // Update with deployed address
+    koilenRegistry: '0xCf4DD864249e0c7f1F7a2c9e317c9Cd11D3FBbCe',
+    sensorDataRegistry: '0xe4a792FFfeBcC1BdA5fDf94F1Fb7C6Dfc2f74CD4',
   },
 
   // Admin address
