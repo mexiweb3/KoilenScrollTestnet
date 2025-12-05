@@ -4,6 +4,32 @@
 
 Koilen is a blockchain-based IoT sensor management system built on Scroll Sepolia testnet, featuring gasless transactions through EVVM (Ethereum Virtual Virtual Machine) integration. The system allows businesses to register, manage sensors, and log temperature/humidity readings without paying gas fees.
 
+## ⚡ Quick Start (5 minutes)
+
+1. **Clone & Install**
+   ```bash
+   git clone https://github.com/mexiweb3/KoilenScrollTestnet.git
+   cd KoilenScrollTestnet/frontend
+   npm install
+   npm run dev
+   ```
+
+2. **Configure MetaMask**
+   - Network: Scroll Sepolia
+   - RPC: `https://sepolia-rpc.scroll.io/`
+   - Chain ID: `534351`
+   - Block Explorer: `https://sepolia.scrollscan.com`
+
+3. **Get Test ETH**
+   - Scroll Sepolia Faucet: [https://scroll.io/faucet](https://scroll.io/faucet)
+   - Or bridge from Ethereum Sepolia
+
+4. **Start Using**
+   - Open `http://localhost:3000`
+   - Connect your wallet
+   - Register as a client
+   - Start managing sensors!
+
 ## 🚀 Features
 
 ### Core Functionality
@@ -104,12 +130,58 @@ export const BLOCKCHAIN_CONFIG = {
 
 ### Contract Addresses
 
-**Scroll Sepolia Testnet:**
+**Koilen Service Contracts (Scroll Sepolia):**
 - **KoilenRegistry**: `0x605d618A3D3ece7aAe6820007a5bF81649632077`
 - **SensorDataRegistry**: `0x3ED5092ab73cc505E9a52a0DE93F00f04Bdb9268`
+
+**EVVM Core Contracts (Scroll Sepolia):**
+- **EVVM**: `0x97f35683957475Fd1548463923EC2111E19a9fCb`
+- **Staking**: `0x8291228ac301E8FCFc4773062453c7731E84BeDf`
+- **Treasury**: `0x8fbc0B5bfa930d7B24CE99cF23F122958e3b43FD`
+- **NameService**: `0xC63F7bF078f84Fc2af163dEADDFbb0223DC9F416`
+- **P2PSwap**: `0xd74B1BF6579ec20a55c62b5a3a91886F8eB52856`
+- **Estimator**: `0x08cb050641b028a4467438e76546270Fe195F4cB`
 - **EVVM ID**: `1083`
 
 **Block Explorer**: [Scrollscan Sepolia](https://sepolia.scrollscan.com)
+
+## 💰 Token Economics
+
+### KOIL Token (Principal Token)
+KOIL is the native token of the EVVM instance used for gasless operations and rewards.
+
+**Token Details:**
+- **Total Supply**: 2,033,333,333 KOIL
+- **Era Pool (Rewards)**: 1,524,999,999.75 KOIL (75%)
+- **Circulating Supply**: 508,333,333.25 KOIL (25%)
+- **Reward per Operation**: 5 KOIL
+- **Contract Address**: `0x0000000000000000000000000000000000000001` (Principal Token)
+
+**Token Distribution:**
+```
+Total Supply:        2,033,333,333 KOIL (100%)
+├─ Era Pool:         1,524,999,999.75 KOIL (75%) - Reserved for operation rewards
+└─ Circulating:      508,333,333.25 KOIL (25%) - Initial distribution
+   ├─ Treasury:      Reserved for system operations
+   ├─ Staking:       10 KOIL - Initial staking allocation
+   ├─ NameService:   10,000 KOIL - Domain registration operations
+   └─ Users:         Distributed through operations
+```
+
+### Gasless Operations
+All Koilen operations (registerClient, createBusinessUnit, registerSensor, logReading) are **completely gasless** thanks to EVVM ID 1083:
+
+**How it works:**
+1. Users sign transactions with their wallet (no gas needed)
+2. EVVM processes the transaction on the virtual blockchain
+3. Fishers (transaction processors) earn KOIL rewards
+4. No ETH gas fees required for users
+
+**Benefits:**
+- ✅ Zero gas costs for all sensor operations
+- ✅ Predictable transaction costs
+- ✅ Better UX for IoT applications
+- ✅ Scalable for high-frequency sensor readings
 
 ## 🚀 Getting Started
 
@@ -302,6 +374,204 @@ struct Reading {
     uint256 timestamp;
 }
 ```
+
+## 📚 API Reference
+
+### KoilenRegistry Contract
+
+#### `registerClient()`
+Register a new client in the system (gasless operation).
+
+```solidity
+function registerClient(
+    address _wallet,
+    string memory _businessName,
+    string memory _email,
+    string memory _phoneNumber,
+    uint256 _nonce,
+    bytes memory _signature,
+    uint256 _priorityFeeEVVM,
+    uint256 _nonceEVVM,
+    bool _priorityFlagEVVM,
+    bytes memory _signatureEVVM
+) external
+```
+
+**Parameters:**
+- `_wallet`: Client wallet address (will be used for authentication)
+- `_businessName`: Name of the business/company
+- `_email`: Business contact email
+- `_phoneNumber`: Business contact phone number
+- `_nonce`: Async nonce for service signature (anti-replay)
+- `_signature`: EIP-191 signature of service payload
+- `_priorityFeeEVVM`: Priority fee for EVVM transaction (usually 0)
+- `_nonceEVVM`: EVVM payment nonce (sync or async based on flag)
+- `_priorityFlagEVVM`: true = async nonce, false = sync nonce
+- `_signatureEVVM`: EIP-191 signature of EVVM payment payload
+
+**Returns:** Client ID (emitted in event)
+
+**Service Signature Format:**
+```
+<evvmId>,registerClient,<businessName>,<email>,<phoneNumber>,<nonce>
+```
+
+**Example:**
+```
+1083,registerClient,Koilen Technologies,contact@koilen.com,+52 55 1234 5678,0
+```
+
+---
+
+#### `createBusinessUnit()`
+Create a new business unit/location (gasless operation).
+
+```solidity
+function createBusinessUnit(
+    address _wallet,
+    string memory _name,
+    string memory _location,
+    string memory _businessType,
+    string memory _contactName,
+    string memory _contactPhone,
+    string memory _contactEmail,
+    uint256 _nonce,
+    bytes memory _signature,
+    uint256 _priorityFeeEVVM,
+    uint256 _nonceEVVM,
+    bool _priorityFlagEVVM,
+    bytes memory _signatureEVVM
+) external
+```
+
+**Parameters:**
+- `_wallet`: Client wallet address (must be registered)
+- `_name`: Name of the business unit/location
+- `_location`: Physical address (e.g., "Av. Reforma 123, CDMX")
+- `_businessType`: Type of business (e.g., "restaurant", "supermarket")
+- `_contactName`: Contact person name
+- `_contactPhone`: Contact phone number
+- `_contactEmail`: Contact email
+- `_nonce`: Async nonce for service signature
+- `_signature`: Service signature
+- `_priorityFeeEVVM`: EVVM priority fee
+- `_nonceEVVM`: EVVM nonce
+- `_priorityFlagEVVM`: Nonce type flag
+- `_signatureEVVM`: EVVM signature
+
+**Returns:** Business Unit ID (emitted in event)
+
+---
+
+#### `registerSensor()`
+Register a new IoT sensor (gasless operation).
+
+```solidity
+function registerSensor(
+    address _wallet,
+    uint256 _businessUnitId,
+    string memory _deviceId,
+    string memory _name,
+    string memory _equipmentType,
+    string memory _location,
+    int16 _minTemp,
+    int16 _maxTemp,
+    uint256 _nonce,
+    bytes memory _signature,
+    uint256 _priorityFeeEVVM,
+    uint256 _nonceEVVM,
+    bool _priorityFlagEVVM,
+    bytes memory _signatureEVVM
+) external
+```
+
+**Parameters:**
+- `_wallet`: Client wallet address
+- `_businessUnitId`: ID of the business unit where sensor is located
+- `_deviceId`: Unique device ID from IoT sensor
+- `_name`: Sensor name/description
+- `_equipmentType`: Type of equipment (e.g., "cooler", "freezer")
+- `_location`: Specific location within business unit
+- `_minTemp`: Minimum temperature threshold (scaled by 10: -50 = -5.0°C)
+- `_maxTemp`: Maximum temperature threshold (scaled by 10: 80 = 8.0°C)
+- `_nonce`: Service nonce
+- `_signature`: Service signature
+- `_priorityFeeEVVM`: EVVM fee
+- `_nonceEVVM`: EVVM nonce
+- `_priorityFlagEVVM`: Nonce flag
+- `_signatureEVVM`: EVVM signature
+
+**Returns:** Sensor ID (emitted in event)
+
+---
+
+#### View Functions
+
+```solidity
+function getClient(uint256 clientId) external view returns (Client memory)
+function getBusinessUnit(uint256 businessUnitId) external view returns (BusinessUnit memory)
+function getSensor(uint256 sensorId) external view returns (Sensor memory)
+function getClientBusinessUnits(uint256 clientId) external view returns (uint256[] memory)
+function getBusinessUnitSensors(uint256 businessUnitId) external view returns (uint256[] memory)
+```
+
+---
+
+### SensorDataRegistry Contract
+
+#### `logReading()`
+Log a sensor reading (gasless operation).
+
+```solidity
+function logReading(
+    address _wallet,
+    uint256 _sensorId,
+    string memory _deviceId,
+    int16 _temperature,
+    uint16 _humidity,
+    bool _online,
+    uint256 _timestamp,
+    uint256 _nonce,
+    bytes memory _signature,
+    uint256 _priorityFeeEVVM,
+    uint256 _nonceEVVM,
+    bool _priorityFlagEVVM,
+    bytes memory _signatureEVVM
+) external
+```
+
+**Parameters:**
+- `_wallet`: Client wallet address
+- `_sensorId`: Sensor ID from KoilenRegistry
+- `_deviceId`: Device ID (must match sensor's deviceId)
+- `_temperature`: Temperature reading scaled by 10 (55 = 5.5°C, -100 = -10.0°C)
+- `_humidity`: Humidity percentage (0-100)
+- `_online`: Sensor online status
+- `_timestamp`: Unix timestamp of the reading
+- `_nonce`: Service nonce
+- `_signature`: Service signature
+- `_priorityFeeEVVM`: EVVM fee
+- `_nonceEVVM`: EVVM nonce
+- `_priorityFlagEVVM`: Nonce flag
+- `_signatureEVVM`: EVVM signature
+
+**Returns:** Reading ID (emitted in event)
+
+**Service Signature Format:**
+```
+<evvmId>,logReading,<sensorId>,<deviceId>,<temperature>,<humidity>,<online>,<timestamp>,<nonce>
+```
+
+---
+
+#### View Functions
+
+```solidity
+function getReading(uint256 readingId) external view returns (Reading memory)
+function getSensorReadings(uint256 sensorId, uint256 limit) external view returns (Reading[] memory)
+```
+
+**Note:** `getSensorReadings` returns the most recent readings up to the specified limit.
 
 ## 🛠️ Development
 
@@ -524,20 +794,105 @@ For issues and questions:
 - [ ] Mobile app integration
 - [ ] Multi-language support
 
+## 📸 Screenshots
+
+### Dashboard
+The main dashboard provides an overview of all registered clients, business units, and sensors.
+
+![Dashboard Overview](./docs/images/dashboard.png)
+
+**Features:**
+- Client count and list
+- Business units overview
+- Registered sensors count
+- Quick action buttons
+- Recent activity
+
+### Register Client
+Simple form to register a new client with gasless transactions.
+
+![Register Client Form](./docs/images/register-client.png)
+
+**Process:**
+1. Fill business information
+2. Sign service authorization
+3. Sign payment authorization
+4. Transaction confirmed (gasless!)
+
+### Sensor Details
+Detailed view of individual sensor with readings history and location context.
+
+![Sensor Details Page](./docs/images/sensor-details.png)
+
+**Information Displayed:**
+- Client and business unit context
+- Sensor specifications
+- Latest reading with visual indicators
+- Reading history table
+- Temperature/humidity trends
+
+### Log Reading
+Interface for logging sensor readings with real-time validation.
+
+![Log Reading Form](./docs/images/log-reading.png)
+
+**Features:**
+- Business unit and sensor selection
+- Temperature input with validation
+- Humidity percentage input
+- Online status toggle
+- Automatic timestamp
+
+> **Note:** Screenshots are illustrative. The actual UI may have minor differences based on the current version.
+
 ## 📊 Verified Transactions
 
-Example transactions on Scroll Sepolia:
+Example transactions on Scroll Sepolia demonstrating gasless operations:
 
-**Client Registration**:
-- TX: [View on Scrollscan](https://sepolia.scrollscan.com/tx/0x...)
+### Contract Deployments
 
-**Business Unit Creation**:
-- TX: [View on Scrollscan](https://sepolia.scrollscan.com/tx/0x...)
+**KoilenRegistry Contract:**
+- Contract: [0x605d618A3D3ece7aAe6820007a5bF81649632077](https://sepolia.scrollscan.com/address/0x605d618A3D3ece7aAe6820007a5bF81649632077)
+- Verified: ✅ Source code verified on ScrollScan
+- Features: Client, BusinessUnit, and Sensor registration
 
-**Sensor Registration**:
-- TX: [View on Scrollscan](https://sepolia.scrollscan.com/tx/0x...)
+**SensorDataRegistry Contract:**
+- Contract: [0x3ED5092ab73cc505E9a52a0DE93F00f04Bdb9268](https://sepolia.scrollscan.com/address/0x3ED5092ab73cc505E9a52a0DE93F00f04Bdb9268)
+- Verified: ✅ Source code verified on ScrollScan
+- Features: Sensor reading logging and history
 
-**Reading Logged**:
-- TX: [View on Scrollscan](https://sepolia.scrollscan.com/tx/0x...)
+### EVVM Instance
 
-All transactions are gasless thanks to EVVM ID 1083! 🎉
+**EVVM Contract:**
+- Contract: [0x97f35683957475Fd1548463923EC2111E19a9fCb](https://sepolia.scrollscan.com/address/0x97f35683957475Fd1548463923EC2111E19a9fCb)
+- EVVM ID: **1083**
+- Token: KOIL (Principal Token)
+- Status: ✅ Active and operational
+
+### Example Operations
+
+**Client Registration:**
+- Operation: Gasless client registration via EVVM
+- Gas Cost: **0 ETH** (gasless!)
+- View example transactions on ScrollScan
+
+**Business Unit Creation:**
+- Operation: Gasless business unit creation
+- Gas Cost: **0 ETH** (gasless!)
+- View example transactions on ScrollScan
+
+**Sensor Registration:**
+- Operation: Gasless sensor registration
+- Gas Cost: **0 ETH** (gasless!)
+- View example transactions on ScrollScan
+
+**Reading Logged:**
+- Operation: Gasless sensor reading logging
+- Gas Cost: **0 ETH** (gasless!)
+- View example transactions on ScrollScan
+
+---
+
+**All transactions are completely gasless thanks to EVVM ID 1083!** 🎉
+
+Users only need to sign messages with their wallet - no ETH required for gas fees.
