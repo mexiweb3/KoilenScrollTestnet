@@ -4,7 +4,7 @@
 
 This document provides complete documentation for the deployment of **KoilenScrollTestnet**, an EVVM (EVM Virtualization) instance deployed on Scroll Sepolia testnet.
 
-**EVVM ID:** `1082`
+**EVVM ID:** `1083`
 **Network:** Scroll Sepolia (Chain ID: 534351)
 **Token Symbol:** KOIL
 **Deployment Date:** December 4, 2025
