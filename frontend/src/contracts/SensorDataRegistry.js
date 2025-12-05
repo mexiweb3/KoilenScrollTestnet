@@ -1,4 +1,4 @@
-const abi = [
+const SensorDataRegistryABI = [
   {
     "type": "constructor",
     "inputs": [
@@ -938,4 +938,5 @@ const abi = [
     "inputs": []
   }
 ];
-export default abi;
+
+export default SensorDataRegistryABI;

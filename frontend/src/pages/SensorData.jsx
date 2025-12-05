@@ -8,9 +8,11 @@ function SensorData() {
   const { sensorId } = useParams();
   const wallet = useWallet();
   const { isConnected, signer, loading: walletLoading } = wallet;
-  const { getSensor, getSensorReadings } = useKoilenContracts(signer);
+  const { getSensor, getSensorReadings, getBusinessUnit, getClient } = useKoilenContracts(signer);
 
   const [sensor, setSensor] = useState(null);
+  const [businessUnit, setBusinessUnit] = useState(null);
+  const [client, setClient] = useState(null);
   const [readings, setReadings] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -23,11 +25,43 @@ function SensorData() {
   const loadData = async () => {
     setLoading(true);
     try {
+      // 1. Get sensor data
+      console.log('Loading sensor data for ID:', sensorId);
       const sensorData = await getSensor(sensorId);
+      console.log('Sensor data loaded:', sensorData);
       setSensor(sensorData);
 
-      const readingsData = await getSensorReadings(sensorId, 20); // Get last 20 readings
-      setReadings(readingsData);
+      // 2. Get business unit data (don't fail if this errors)
+      try {
+        console.log('Loading business unit for ID:', sensorData.businessUnitId);
+        const buData = await getBusinessUnit(sensorData.businessUnitId);
+        console.log('Business unit data loaded:', buData);
+        setBusinessUnit(buData);
+
+        // 3. Get client data (don't fail if this errors)
+        try {
+          console.log('Loading client for ID:', buData.clientId);
+          const clientData = await getClient(buData.clientId);
+          console.log('Client data loaded:', clientData);
+          setClient(clientData);
+        } catch (clientError) {
+          console.error("Error loading client data:", clientError);
+          // Continue anyway - sensor data is more important
+        }
+      } catch (buError) {
+        console.error("Error loading business unit data:", buError);
+        // Continue anyway - sensor data is more important
+      }
+
+      // 4. Get sensor readings (don't fail if this errors)
+      try {
+        const readingsData = await getSensorReadings(sensorId, 20);
+        console.log('Readings loaded:', readingsData.length, 'readings');
+        setReadings(readingsData);
+      } catch (readingsError) {
+        console.error("Error loading readings:", readingsError);
+        setReadings([]);
+      }
     } catch (error) {
       console.error("Error loading sensor data:", error);
     } finally {
@@ -78,6 +112,45 @@ function SensorData() {
             </p>
           </div>
           <button className="button-secondary" onClick={loadData}>Updated 🔄</button>
+        </div>
+
+        {/* Client and Business Unit Info */}
+        <div className="card" style={{ background: '#f7fafc', marginBottom: '20px' }}>
+          <h3 style={{ marginTop: 0, color: '#667eea' }}>📍 Información de Ubicación</h3>
+
+          {/* Debug info */}
+          <div style={{ marginBottom: '15px', padding: '10px', background: '#fff', borderRadius: '4px' }}>
+            <p style={{ margin: '5px 0', fontSize: '12px', color: '#666' }}>
+              <strong>Debug:</strong> businessUnit={businessUnit ? 'loaded' : 'null'}, client={client ? 'loaded' : 'null'}
+            </p>
+            {sensor && (
+              <p style={{ margin: '5px 0', fontSize: '12px', color: '#666' }}>
+                <strong>Sensor businessUnitId:</strong> {sensor.businessUnitId}
+              </p>
+            )}
+          </div>
+
+          {client && (
+            <div style={{ marginBottom: '15px' }}>
+              <p style={{ margin: '5px 0' }}><strong>🏢 Cliente:</strong> {client.businessName}</p>
+              <p style={{ margin: '5px 0', color: '#718096' }}><strong>📧 Email:</strong> {client.email}</p>
+              <p style={{ margin: '5px 0', color: '#718096' }}><strong>📞 Teléfono:</strong> {client.phoneNumber}</p>
+            </div>
+          )}
+
+          {businessUnit && (
+            <div>
+              <p style={{ margin: '5px 0' }}><strong>🏪 Sucursal:</strong> {businessUnit.name}</p>
+              <p style={{ margin: '5px 0', color: '#718096' }}><strong>📍 Ubicación:</strong> {businessUnit.location}</p>
+              <p style={{ margin: '5px 0', color: '#718096' }}><strong>🏷️ Tipo:</strong> {businessUnit.businessType}</p>
+            </div>
+          )}
+
+          {!client && !businessUnit && (
+            <p style={{ color: '#999', fontStyle: 'italic' }}>
+              Cargando información de ubicación...
+            </p>
+          )}
         </div>
 
         <div className="card" style={{ background: '#f7fafc' }}>

@@ -193,6 +193,9 @@ function Dashboard({ wallet }) {
           <button className="button" onClick={() => navigate('/sensors/register')} style={{ background: '#48bb78' }}>
             + Nuevo Sensor
           </button>
+          <button className="button" onClick={() => navigate('/readings/log')} style={{ background: '#f6ad55' }}>
+            📊 Registrar Lectura
+          </button>
         </div>
 
         {/* Business Units List */}

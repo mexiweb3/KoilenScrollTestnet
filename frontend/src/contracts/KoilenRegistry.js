@@ -1,4 +1,4 @@
-const abi = [
+const KoilenRegistryABI = [
   {
     "type": "constructor",
     "inputs": [
@@ -1978,4 +1978,5 @@ const abi = [
     "inputs": []
   }
 ];
-export default abi;
+
+export default KoilenRegistryABI;

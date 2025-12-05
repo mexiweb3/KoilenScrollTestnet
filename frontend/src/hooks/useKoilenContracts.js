@@ -366,6 +366,10 @@ export function useKoilenContracts(signer) {
       const signature = await signer.signMessage(servicePayload);
       console.log("Signature 1 obtained");
 
+      // Add delay and alert between signatures
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      alert('¡Primera firma lista! Ahora viene la segunda firma (autorización de pago)...');
+
       // 2. Sign Payment
       console.log("Constructing Payment Payload...");
       const { nonce: evvmNonce, payload: paymentPayload } = await getEvvmPaymentPayload(
@@ -463,14 +467,16 @@ export function useKoilenContracts(signer) {
   const getBusinessUnit = async (businessUnitId) => {
     try {
       const bu = await koilenRegistry.getBusinessUnit(businessUnitId);
+
       return {
         id: bu.id.toString(),
         clientId: bu.clientId.toString(),
         name: bu.name,
+        location: bu.location, // Single location field
         businessType: bu.businessType,
-        address: bu.physicalAddress,
-        city: bu.city,
-        country: bu.country,
+        contactName: bu.contactName,
+        contactPhone: bu.contactPhone,
+        contactEmail: bu.contactEmail,
         isActive: bu.isActive,
         createdAt: new Date(Number(bu.createdAt) * 1000),
       };
