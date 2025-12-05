@@ -1,12 +1,15 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.30;
 
+import "../../library/EvvmService.sol";
+import {AdvancedStrings} from "@evvm/testnet-contracts/library/utils/AdvancedStrings.sol";
+
 /**
  * @title SensorDataRegistry
  * @dev Immutable registry for sensor readings with data integrity verification
  * @notice Stores temperature and humidity readings on-chain for audit trail
  */
-contract SensorDataRegistry {
+contract SensorDataRegistry is EvvmService {
 
     // ============ STRUCTS ============
 
@@ -78,9 +81,19 @@ contract SensorDataRegistry {
     event WriterAuthorized(address indexed writer, uint256 timestamp);
     event WriterRevoked(address indexed writer, uint256 timestamp);
 
+    function _intToString(int256 value) internal pure returns (string memory) {
+        if (value == 0) return "0";
+        if (value < 0) {
+            return string.concat("-", AdvancedStrings.uintToString(uint256(-value)));
+        }
+        return AdvancedStrings.uintToString(uint256(value));
+    }
+
     // ============ CONSTRUCTOR ============
 
-    constructor() {
+    constructor(address _evvmAddress, address _stakingAddress) 
+        EvvmService(_evvmAddress, _stakingAddress) 
+    {
         admin = msg.sender;
         authorizedWriters[msg.sender] = true;
     }
@@ -111,14 +124,14 @@ contract SensorDataRegistry {
 
     // ============ WRITE FUNCTIONS ============
 
-    function logReading(
+    function _logReading(
         uint256 _sensorId,
         string memory _deviceId,
         int16 _temperature,
         int16 _humidity,
         bool _online,
         uint256 _timestamp
-    ) public onlyAuthorized returns (bytes32) {
+    ) internal returns (bytes32) {
         // Generar hash de los datos
         bytes32 dataHash = keccak256(abi.encodePacked(
             _sensorId,
@@ -162,6 +175,72 @@ contract SensorDataRegistry {
         return dataHash;
     }
 
+    function logReading(
+        address _writer,
+        uint256 _sensorId,
+        string memory _deviceId,
+        int16 _temperature,
+        int16 _humidity,
+        bool _online,
+        uint256 _timestamp,
+        uint256 _nonce,
+        bytes memory _signature,
+        uint256 _priorityFeeEVVM,
+        uint256 _nonceEVVM,
+        bool _priorityFlagEVVM,
+        bytes memory _signatureEVVM
+    ) public returns (bytes32) {
+        // Verify signature
+        validateServiceSignature(
+            "logReading",
+            string.concat(
+                 AdvancedStrings.uintToString(_sensorId),
+                 ",",
+                 _deviceId,
+                 ",",
+                 _intToString(int256(_temperature)),
+                 ",",
+                 _intToString(int256(_humidity)),
+                 ",",
+                 _online ? "true" : "false",
+                 ",",
+                 AdvancedStrings.uintToString(_timestamp),
+                 ",",
+                 AdvancedStrings.uintToString(_nonce)
+            ),
+            _signature,
+            _writer
+        );
+
+        // Replay protection
+        verifyAsyncServiceNonce(_writer, _nonce);
+
+        require(authorizedWriters[_writer], "Not authorized");
+
+        // Execute payment if needed
+        requestPay(
+            _writer,
+            getEtherAddress(),
+            0,
+            _priorityFeeEVVM,
+            _nonceEVVM,
+            _priorityFlagEVVM,
+            _signatureEVVM
+        );
+
+        // Mark nonce
+        markAsyncServiceNonceAsUsed(_writer, _nonce);
+
+        return _logReading(
+            _sensorId,
+            _deviceId,
+            _temperature,
+            _humidity,
+            _online,
+            _timestamp
+        );
+    }
+
     function logReadingsBatch(
         uint256[] memory _sensorIds,
         string[] memory _deviceIds,
@@ -180,7 +259,7 @@ contract SensorDataRegistry {
         );
 
         for (uint256 i = 0; i < _sensorIds.length; i++) {
-            logReading(
+            _logReading(
                 _sensorIds[i],
                 _deviceIds[i],
                 _temperatures[i],

@@ -1,16 +1,15 @@
-// Blockchain configuration for Koilen Web3
-
 export const BLOCKCHAIN_CONFIG = {
   // Network
   networkName: 'Scroll Sepolia',
   chainId: 534351,
+  evvmId: 1083,
   rpcUrl: 'https://sepolia-rpc.scroll.io/',
   blockExplorer: 'https://sepolia.scrollscan.com',
 
   // Contract Addresses (Deployed on Scroll Sepolia)
   contracts: {
-    koilenRegistry: '0xCf4DD864249e0c7f1F7a2c9e317c9Cd11D3FBbCe',
-    sensorDataRegistry: '0xe4a792FFfeBcC1BdA5fDf94F1Fb7C6Dfc2f74CD4',
+    koilenRegistry: '0x605d618A3D3ece7aAe6820007a5bF81649632077',
+    sensorDataRegistry: '0x3ED5092ab73cc505E9a52a0DE93F00f04Bdb9268',
   },
 
   // Admin address

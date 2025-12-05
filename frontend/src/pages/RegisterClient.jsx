@@ -1,9 +1,11 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useKoilenContracts } from '../hooks/useKoilenContracts';
 
 function RegisterClient({ wallet }) {
   const navigate = useNavigate();
-  const { account, isConnected } = wallet;
+  const { account, isConnected, signer } = wallet;
+  const { registerClient, getClientIdByWallet } = useKoilenContracts(signer);
 
   const [formData, setFormData] = useState({
     businessName: '',
@@ -13,10 +15,41 @@ function RegisterClient({ wallet }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
+  const [checkingRegistration, setCheckingRegistration] = useState(true);
+
+  useEffect(() => {
+    if (isConnected && signer && account) {
+      checkIfAlreadyRegistered();
+    }
+  }, [isConnected, signer, account]);
+
+  const checkIfAlreadyRegistered = async () => {
+    try {
+      const clientId = await getClientIdByWallet(account);
+      if (clientId > 0) {
+        // Already registered, redirect to dashboard
+        navigate('/dashboard');
+      }
+    } catch (error) {
+      console.error('Error checking registration:', error);
+    } finally {
+      setCheckingRegistration(false);
+    }
+  };
 
   if (!isConnected) {
     navigate('/');
     return null;
+  }
+
+  if (checkingRegistration) {
+    return (
+      <div className="container" style={{ paddingTop: '40px' }}>
+        <div className="card" style={{ textAlign: 'center', padding: '40px' }}>
+          <h2>Verificando registro...</h2>
+        </div>
+      </div>
+    );
   }
 
   const handleChange = (e) => {
@@ -33,16 +66,16 @@ function RegisterClient({ wallet }) {
     setSuccess(null);
 
     try {
-      // TODO: Llamar al contrato KoilenRegistry.registerClient()
-      console.log('Registering client:', formData);
+      const result = await registerClient(
+        formData.businessName,
+        formData.email,
+        formData.phoneNumber || ''
+      );
 
-      // Simular transacción
-      await new Promise(resolve => setTimeout(resolve, 2000));
-
-      setSuccess('Cliente registrado exitosamente en blockchain!');
-      setTimeout(() => navigate('/dashboard'), 2000);
+      setSuccess(`Cliente registrado exitosamente! TX: ${result.txHash}`);
+      setTimeout(() => navigate('/dashboard'), 3000);
     } catch (err) {
-      setError(err.message);
+      setError(err.message || 'Error al registrar cliente');
     } finally {
       setLoading(false);
     }

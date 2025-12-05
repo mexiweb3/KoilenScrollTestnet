@@ -16,225 +16,69 @@ Todo almacenado en smart contracts desplegados en **Scroll Sepolia Testnet**.
 
 ---
 
-## 🏗️ Arquitectura
+## 🏗️ Arquitectura (EVVM Services)
+
+Koilen ahora opera como un **Servicio EVVM**, lo que permite transacciones "Gasless" para los usuarios finales.
 
 ```
-├── src/contracts/koilen/          # Smart Contracts (Solidity)
-│   ├── KoilenRegistry.sol         # Registro de clientes, sucursales, sensores
-│   └── SensorDataRegistry.sol     # Registro inmutable de lecturas
+├── src/contracts/koilen/          # Smart Contracts (EVVM Services)
+│   ├── KoilenRegistry.sol         # Hereda de EvvmService.sol
+│   └── SensorDataRegistry.sol     # Hereda de EvvmService.sol
 ├── script/
-│   └── DeployKoilen.s.sol         # Script de deployment
-└── frontend/                       # Frontend Web3 (React)
-    ├── src/
-    │   ├── pages/                 # Páginas de la app
-    │   ├── hooks/                 # React Hooks personalizados
-    │   ├── config/                # Configuración blockchain
-    │   └── App.jsx                # Componente principal
-    └── package.json
+│   └── DeployKoilenServices.s.sol # Script de deployment en EVVM existente
+└── frontend/                       
+    └── src/hooks/useKoilenContracts.js # Implementa EIP-191 Signing
 ```
+
+### ¿Cómo funciona el "Gasless"?
+1. **Usuario**: No necesita ETH. Solo firma un mensaje criptográfico (EIP-191) autorizando la acción.
+2. **Fisher (Relayer)**: Recibe la firma y envía la transacción a la blockchain, pagando el gas (ETH) en Scroll Sepolia.
+3. **Contrato**: Verifica la firma del usuario y ejecuta la lógica.
 
 ---
 
 ## 🚀 Instalación y Deployment
 
-### Paso 1: Deploy de Smart Contracts
+### Paso 1: Deploy de Servicios
 
 ```bash
 cd /home/davidiego2/Documents/Koilen/Scroll/Testnet-Contracts
 
-# Compilar contratos
-forge build
-
-# Deploy en Scroll Sepolia
-forge script script/DeployKoilen.s.sol \
+# Deploy conectado al EVVM ID 1083
+forge script script/DeployKoilenServices.s.sol \
   --rpc-url https://sepolia-rpc.scroll.io/ \
   --account defaultKey \
-  --broadcast \
-  --verify
-
-# Guarda las direcciones de los contratos desplegados
+  --broadcast
 ```
 
-**Contratos desplegados:**
-- `KoilenRegistry`: 0x... (actualizar después del deploy)
-- `SensorDataRegistry`: 0x... (actualizar después del deploy)
+**Contratos actuales:**
+- `KoilenRegistry`: `0x605d618A3D3ece7aAe6820007a5bF81649632077`
+- `SensorDataRegistry`: `0x3ED5092ab73cc505E9a52a0DE93F00f04Bdb9268`
+- `EVVM ID`: `1083`
 
 ---
 
-### Paso 2: Configurar Frontend
-
-```bash
-cd frontend
-
-# Instalar dependencias
-npm install
-
-# Actualizar addresses en src/config/blockchain.js
-# Reemplazar '0x...' con las direcciones reales de los contratos
-
-# Iniciar servidor de desarrollo
-npm run dev
-
-# Abrir http://localhost:3000
-```
-
----
-
-## 📝 Uso del Sistema
+## 📝 Uso del Sistema (Flow Gasless)
 
 ### 1. Conectar Wallet
+El usuario conecta su wallet (MetaMask) pero **NO necesita tener fondos en Scroll Sepolia**.
 
-1. Abre la aplicación en `http://localhost:3000`
-2. Click en "Conectar con MetaMask"
-3. Asegúrate de estar en **Scroll Sepolia** (Chain ID: 534351)
-
-### 2. Registrar Cliente
-
-1. Ve a **Dashboard** → "Registrar Cliente"
-2. Completa:
-   - Nombre del negocio
-   - Email
-   - Teléfono
-3. Firma la transacción con MetaMask
-4. ✅ Cliente registrado en blockchain
-
-### 3. Crear Sucursal
-
-1. Dashboard → "Gestionar Sucursales" → "Nueva Sucursal"
-2. Completa:
-   - Nombre de la sucursal
-   - Ubicación (ciudad, país)
-   - Tipo de negocio
-   - Información de contacto
-3. Firma la transacción
-4. ✅ Sucursal creada en blockchain
-
-### 4. Registrar Sensor
-
-1. Dashboard → "Gestionar Sensores" → "Nuevo Sensor"
-2. Completa:
-   - Device ID de Tuya
-   - Nombre del sensor
-   - Ubicación específica
-   - Tipo de equipo (freezer, cooler, etc.)
-   - Rangos de temperatura y humedad
-3. Firma la transacción
-4. ✅ Sensor registrado en blockchain
-
-### 5. Registrar Lectura Manual
-
-1. Dashboard → "Ver Lecturas" → Seleccionar sensor
-2. Ingresar:
-   - Temperatura
-   - Humedad
-   - Estado (online/offline)
-3. Firma la transacción
-4. ✅ Lectura registrada de forma inmutable
+### 2. Registrar Cliente / Sucursal / Sensor
+1. El usuario llena el formulario.
+2. Al hacer click en "Guardar", MetaMask pide **FIRMAR** un mensaje (no una transacción).
+3. **Costo para el usuario: 0 ETH.**
 
 ---
 
-## 🔧 Desarrollo
+## 💰 Modelo de Costos
 
-### Compilar Contratos
+| Actor | Rol | Costo |
+|-------|-----|-------|
+| **Usuario Final** | Genera datos | **$0 (Gratis)** |
+| **Fisher (Koilen)** | Envía transacciones | Paga el Gas en Scroll (~$0.01/tx) |
+| **EVVM** | Orquestador | Gestiona los pagos (opcionalmente en Tokens) |
 
-```bash
-forge build
-```
-
-### Testing de Contratos
-
-```bash
-forge test
-forge test -vvv  # Verbose
-```
-
-### Verificar Contratos
-
-```bash
-forge verify-contract \
-  --chain-id 534351 \
-  --etherscan-api-key YOUR_API_KEY \
-  CONTRACT_ADDRESS \
-  src/contracts/koilen/KoilenRegistry.sol:KoilenRegistry
-```
-
-### Build Frontend para Producción
-
-```bash
-cd frontend
-npm run build
-```
-
----
-
-## 📊 Smart Contracts - Funciones Principales
-
-### KoilenRegistry.sol
-
-**Clientes:**
-- `registerClient(businessName, email, phoneNumber)` → Registrar cliente
-- `getClientByWallet(wallet)` → Obtener cliente por wallet
-- `getAllClients()` → Listar todos los clientes
-
-**Sucursales:**
-- `createBusinessUnit(name, location, businessType, ...)` → Crear sucursal
-- `getClientBusinessUnits(clientId)` → Obtener sucursales de un cliente
-- `getAllBusinessUnits()` → Listar todas las sucursales
-
-**Sensores:**
-- `registerSensor(businessUnitId, deviceId, name, ...)` → Registrar sensor
-- `getBusinessUnitSensors(businessUnitId)` → Obtener sensores de una sucursal
-- `getSensorByDeviceId(deviceId)` → Buscar sensor por device ID
-- `updateSensorConfig(sensorId, tempMin, tempMax, ...)` → Actualizar configuración
-
-**Estadísticas:**
-- `getTotalClients()` → Total de clientes
-- `getTotalBusinessUnits()` → Total de sucursales
-- `getTotalSensors()` → Total de sensores
-
-### SensorDataRegistry.sol
-
-**Escritura:**
-- `logReading(sensorId, deviceId, temperature, humidity, online, timestamp)` → Registrar lectura
-- `logReadingsBatch([...])` → Registrar múltiples lecturas
-- `logAlert(sensorId, alertType, value, readingHash)` → Registrar alerta
-
-**Lectura:**
-- `getLatestReading(deviceId)` → Última lectura de un sensor
-- `getLatestReadings(deviceId, count)` → Últimas N lecturas
-- `getSensorReadings(sensorId, count)` → Lecturas de un sensor
-- `getSensorAlerts(sensorId)` → Alertas de un sensor
-
-**Verificación:**
-- `verifyReading(deviceId, index)` → Verificar integridad de una lectura
-
----
-
-## 🔐 Seguridad
-
-### Control de Acceso
-
-- **Admin**: Puede gestionar todo el sistema
-- **Client Owner**: Solo puede ver y modificar sus propios datos
-- **Shared Access**: Sucursales pueden compartirse con otros usuarios
-
-### Permisos en SensorDataRegistry
-
-- Solo wallets autorizadas pueden escribir lecturas
-- Las lecturas son **inmutables** una vez registradas
-- Hash de verificación para detectar manipulación
-
----
-
-## 💰 Costos Estimados
-
-En **Scroll Sepolia** (testnet):
-- Registro de cliente: ~0.0001 ETH
-- Crear sucursal: ~0.00012 ETH
-- Registrar sensor: ~0.00015 ETH
-- Registrar lectura: ~0.00008 ETH
-
-**Total para setup completo:** ~0.0005 ETH (~$2 USD en mainnet)
+En esta fase Testnet, el modelo es **totalmente subsidiado** (Monto de pago = 0).
 
 ---
 

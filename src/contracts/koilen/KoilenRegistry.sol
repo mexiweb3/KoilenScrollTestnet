@@ -2,13 +2,15 @@
 pragma solidity ^0.8.30;
 
 import "@openzeppelin/contracts/access/AccessControl.sol";
+import "../../library/EvvmService.sol";
+import {AdvancedStrings} from "@evvm/testnet-contracts/library/utils/AdvancedStrings.sol";
 
 /**
  * @title KoilenRegistry
  * @dev Main registry contract for Koilen IoT monitoring system
  * @notice Manages clients, business units, and sensors on-chain
  */
-contract KoilenRegistry is AccessControl {
+contract KoilenRegistry is AccessControl, EvvmService {
 
     // ============ ROLES ============
     bytes32 public constant ADMIN_ROLE = keccak256("ADMIN_ROLE");
@@ -126,11 +128,6 @@ contract KoilenRegistry is AccessControl {
         uint256 timestamp
     );
 
-    event SensorUpdated(
-        uint256 indexed sensorId,
-        uint256 timestamp
-    );
-
     event SensorConfigUpdated(
         uint256 indexed sensorId,
         int16 tempMin,
@@ -138,9 +135,19 @@ contract KoilenRegistry is AccessControl {
         uint256 timestamp
     );
 
+    function _intToString(int256 value) internal pure returns (string memory) {
+        if (value == 0) return "0";
+        if (value < 0) {
+            return string.concat("-", AdvancedStrings.uintToString(uint256(-value)));
+        }
+        return AdvancedStrings.uintToString(uint256(value));
+    }
+
     // ============ CONSTRUCTOR ============
 
-    constructor() {
+    constructor(address _evvmAddress, address _stakingAddress) 
+        EvvmService(_evvmAddress, _stakingAddress) 
+    {
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
         _grantRole(ADMIN_ROLE, msg.sender);
         _grantRole(OPERATOR_ROLE, msg.sender);
@@ -171,17 +178,57 @@ contract KoilenRegistry is AccessControl {
     // ============ CLIENT FUNCTIONS ============
 
     function registerClient(
+        address _wallet,
         string memory _businessName,
         string memory _email,
-        string memory _phoneNumber
+        string memory _phoneNumber,
+        uint256 _nonce,
+        bytes memory _signature,
+        uint256 _priorityFeeEVVM,
+        uint256 _nonceEVVM,
+        bool _priorityFlagEVVM,
+        bytes memory _signatureEVVM
     ) public returns (uint256) {
-        require(walletToClientId[msg.sender] == 0, "Client already registered");
+        // Verify signature
+        validateServiceSignature(
+            "registerClient",
+            string.concat(
+                _businessName,
+                ",",
+                _email,
+                ",",
+                _phoneNumber,
+                ",",
+                AdvancedStrings.uintToString(_nonce)
+            ),
+            _signature,
+            _wallet
+        );
+
+        // Replay protection
+        verifyAsyncServiceNonce(_wallet, _nonce);
+
+        require(walletToClientId[_wallet] == 0, "Wallet already registered");
+
+        // Pay for the service (even if free/gasless for user, someone pays gas, potentially priority fee logic here)
+        // For now, simple logic, maybe transfer 0 if no cost, or just fisher rewards if applic.
+        // Assuming free registration for now, but we must process the EVVM payment part if fisher expects reward/fee
+        // Minimal payment execution to satisfy EVVM flow:
+        requestPay(
+            _wallet,
+            getEtherAddress(),
+            0, // Amount
+            _priorityFeeEVVM, // Priority fee
+            _nonceEVVM,
+            _priorityFlagEVVM,
+            _signatureEVVM
+        );
 
         uint256 clientId = nextClientId++;
 
         clients[clientId] = Client({
             id: clientId,
-            wallet: msg.sender,
+            wallet: _wallet,
             businessName: _businessName,
             email: _email,
             phoneNumber: _phoneNumber,
@@ -190,12 +237,13 @@ contract KoilenRegistry is AccessControl {
             updatedAt: block.timestamp
         });
 
-        walletToClientId[msg.sender] = clientId;
+        walletToClientId[_wallet] = clientId;
         allClientIds.push(clientId);
 
-        emit ClientRegistered(clientId, msg.sender, _businessName, block.timestamp);
+        // Mark nonce
+        markAsyncServiceNonceAsUsed(_wallet, _nonce);
 
-        return clientId;
+        emit ClientRegistered(clientId, _wallet, _businessName, block.timestamp);
     }
 
     function updateClient(
@@ -236,15 +284,57 @@ contract KoilenRegistry is AccessControl {
     // ============ BUSINESS UNIT FUNCTIONS ============
 
     function createBusinessUnit(
+        address _wallet,
         string memory _name,
         string memory _location,
         string memory _businessType,
         string memory _contactName,
         string memory _contactPhone,
-        string memory _contactEmail
+        string memory _contactEmail,
+        uint256 _nonce,
+        bytes memory _signature,
+        uint256 _priorityFeeEVVM,
+        uint256 _nonceEVVM,
+        bool _priorityFlagEVVM,
+        bytes memory _signatureEVVM
     ) public returns (uint256) {
-        uint256 clientId = walletToClientId[msg.sender];
+        // Verify signature
+        validateServiceSignature(
+            "createBusinessUnit",
+            string.concat(
+                 _name,
+                 ",",
+                 _location,
+                 ",",
+                 _businessType,
+                 ",",
+                 _contactName,
+                 ",",
+                 _contactPhone,
+                 ",",
+                 _contactEmail,
+                 ",",
+                 AdvancedStrings.uintToString(_nonce)
+            ),
+            _signature,
+            _wallet
+        );
+
+        // Replay protection
+        verifyAsyncServiceNonce(_wallet, _nonce);
+
+        uint256 clientId = walletToClientId[_wallet];
         require(clientId != 0, "Must be registered client");
+
+        requestPay(
+            _wallet,
+            getEtherAddress(),
+            0,
+            _priorityFeeEVVM,
+            _nonceEVVM,
+            _priorityFlagEVVM,
+            _signatureEVVM
+        );
 
         uint256 businessUnitId = nextBusinessUnitId++;
 
@@ -265,6 +355,9 @@ contract KoilenRegistry is AccessControl {
         clientBusinessUnits[clientId].push(businessUnitId);
         allBusinessUnitIds.push(businessUnitId);
 
+        // Mark nonce
+        markAsyncServiceNonceAsUsed(_wallet, _nonce);
+
         emit BusinessUnitCreated(
             businessUnitId,
             clientId,
@@ -272,7 +365,7 @@ contract KoilenRegistry is AccessControl {
             _location,
             block.timestamp
         );
-
+        
         return businessUnitId;
     }
 
@@ -342,6 +435,7 @@ contract KoilenRegistry is AccessControl {
     // ============ SENSOR FUNCTIONS ============
 
     function registerSensor(
+        address _wallet,
         uint256 _businessUnitId,
         string memory _deviceId,
         string memory _name,
@@ -350,10 +444,64 @@ contract KoilenRegistry is AccessControl {
         int16 _tempMin,
         int16 _tempMax,
         int16 _humidityMin,
-        int16 _humidityMax
-    ) public onlyBusinessUnitOwner(_businessUnitId) returns (uint256) {
+        int16 _humidityMax,
+        uint256 _nonce,
+        bytes memory _signature,
+        uint256 _priorityFeeEVVM,
+        uint256 _nonceEVVM,
+        bool _priorityFlagEVVM,
+        bytes memory _signatureEVVM
+    ) public returns (uint256) {
+        // Verify signature
+        validateServiceSignature(
+            "registerSensor",
+            string.concat(
+                 AdvancedStrings.uintToString(_businessUnitId),
+                 ",",
+                 _deviceId,
+                 ",",
+                 _name,
+                 ",",
+                 _location,
+                 ",",
+                 _equipmentType,
+                 ",",
+                 _intToString(int256(_tempMin)),
+                 ",",
+                 _intToString(int256(_tempMax)),
+                 ",",
+                 _intToString(int256(_humidityMin)), // Note: humidity is int16 in logic but often uint in struct? 
+                 // Wait, struct says int16 for humidity too? 
+                 // Let's check struct. Struct Sensor says: int16 humidityMin, int16 humidityMax. 
+                 // Arguments say int16. Okay.
+                 ",",
+                 _intToString(int256(_humidityMax)),
+                 ",",
+                 AdvancedStrings.uintToString(_nonce)
+            ),
+            _signature,
+            _wallet
+        );
+
+        // Replay protection
+        verifyAsyncServiceNonce(_wallet, _nonce);
+
+        // Ownership check
+        uint256 clientId = businessUnits[_businessUnitId].clientId;
+        require(clients[clientId].wallet == _wallet, "Not authorized");
+
         require(businessUnits[_businessUnitId].id != 0, "BusinessUnit not found");
         require(deviceIdToSensorId[_deviceId] == 0, "Device already registered");
+
+        requestPay(
+            _wallet,
+            getEtherAddress(),
+            0,
+            _priorityFeeEVVM,
+            _nonceEVVM,
+            _priorityFlagEVVM,
+            _signatureEVVM
+        );
 
         uint256 sensorId = nextSensorId++;
 
