@@ -18,7 +18,7 @@ if ! command -v forge &> /dev/null; then
 fi
 
 echo "📦 Compiling contracts..."
-forge build --contracts src/contracts/koilen/
+forge build --skip '*/StakeOne.sol' --skip '*/StakeExact.sol'
 
 if [ $? -ne 0 ]; then
     echo "❌ Compilation failed"
