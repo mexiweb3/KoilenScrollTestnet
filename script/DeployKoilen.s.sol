@@ -16,15 +16,10 @@ contract DeployKoilen is Script {
     SensorDataRegistry public sensorDataRegistry;
 
     function run() public {
-        // Get deployer private key from environment
-        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
-        address deployer = vm.addr(deployerPrivateKey);
-
         console.log("Deploying Koilen contracts...");
-        console.log("Deployer address:", deployer);
-        console.log("Deployer balance:", deployer.balance);
+        console.log("Deployer address:", msg.sender);
 
-        vm.startBroadcast(deployerPrivateKey);
+        vm.startBroadcast();
 
         // Deploy KoilenRegistry
         console.log("\n1. Deploying KoilenRegistry...");
